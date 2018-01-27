@@ -40,32 +40,32 @@ public abstract class AbstractConfigLoader implements ConfigLoader {
         T toConfigObject = ReflectUtil.newInstance(toType);
 
         for (final Field field : ReflectUtil.getFields(toType)) {
-            Collection<SystemConfig> x = CollUtil.filter(configs, new Filter<SystemConfig>() {
+            Collection<SystemConfig> configsForField = CollUtil.filter(configs, new Filter<SystemConfig>() {
                 @Override
                 public boolean accept(SystemConfig systemConfig) {
                     return StrUtil.equalsIgnoreCase(field.getName(), systemConfig.getName());
                 }
             });
 
-            if (x.isEmpty()) {
+            if (configsForField.isEmpty()) {
                 continue;
             }
 
             if (ClassUtil.isSimpleValueType(field.getType())) {
-                SystemConfig config = mustUnique(x);
+                SystemConfig config = mustUnique(configsForField);
                 ReflectUtil.setFieldValue(toConfigObject, field,
                         Convert.convert(field.getType(), config.getValue()));
             } else if (field.getType().isArray()) {
-                List<String> values = CollectionExUtil.collectWithKey(x, "value");
+                List<String> values = CollectionExUtil.collectWithKey(configsForField, "value");
 
                 ReflectUtil.setFieldValue(toConfigObject, field,
                         Convert.convert(field.getType(), values.toArray()));
             } else {
-                SystemConfig config = CollUtil.getFirst(configs);
+                SystemConfig config = CollUtil.getFirst(configsForField);
                 Assert.isFalse(Collection.class.isAssignableFrom(field.getType()),
                         "配置属性不允许为Collection，请使用Array|name={}|type={}",
                         config.getName(), config.getType());
-                mustUnique(x);
+                mustUnique(configsForField);
                 Object value = JSON.parseObject(config.getValue(), field.getType());
                 ReflectUtil.setFieldValue(toConfigObject, field, value);
             }
