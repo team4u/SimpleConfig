@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE database SYSTEM "https://gitee.com/fjay/ddlutils/raw/trunk/src/main/resources/database.dtd">
+<database name="model">
+    <table name="system_config" description="系统配置">
+        <column name="id" primaryKey="true" type="BIGINT" size="20" autoIncrement="true" description="自增长标识"/>
+        <column name="is_enabled" type="BOOLEANINT" required="true" default="1" size="1" description="是否开启"/>
+        <column name="type" required="true" default="" size="32" description="类型"/>
+        <column name="name" required="true" default="" size="255" description="键"/>
+        <column name="value" required="true" default="" size="4000" description="值"/>
+        <column name="sequence_no" type="BIGINT" required="true" size="20" description="顺序号" default="0"/>
+        <column name="description" required="true" size="255" description="描述" default=""/>
+        <column name="create_time" required="true" type="TIMESTAMP" default="2018-01-01 00:00:00" description="创建时间"/>
+        <column name="update_time" required="true" type="TIMESTAMP" description="更新时间" default="2018-01-01 00:00:00"/>
+        <index name="idx_type_name">
+            <index-column name="name"/>
+            <index-column name="type"/>
+        </index>
+    </table>
+</database>
