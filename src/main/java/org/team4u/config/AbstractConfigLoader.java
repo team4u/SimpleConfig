@@ -20,18 +20,20 @@ import java.util.List;
 /**
  * @author Jay.Wu
  */
-public abstract class AbstractConfigLoader implements ConfigLoader {
+public abstract class AbstractConfigLoader<C extends SystemConfig> implements ConfigLoader<C> {
 
     private final Log log = LogFactory.get();
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T to(Class<T> toType) {
         final ConfigurationProperties cp = toType.getAnnotation(ConfigurationProperties.class);
         Assert.notNull(cp, "请添加@ConfigurationProperties注解");
 
-        Collection<SystemConfig> configs = CollUtil.filter(load(), new Filter<SystemConfig>() {
+        Collection<? extends SystemConfig> configs = CollUtil.filter(load(), new Filter() {
             @Override
-            public boolean accept(SystemConfig systemConfig) {
+            public boolean accept(Object o) {
+                SystemConfig systemConfig = (SystemConfig) o;
                 return systemConfig.getEnabled() &&
                         StrUtil.equalsIgnoreCase(systemConfig.getType(), cp.value());
             }
@@ -40,9 +42,10 @@ public abstract class AbstractConfigLoader implements ConfigLoader {
         T toConfigObject = ReflectUtil.newInstance(toType);
 
         for (final Field field : ReflectUtil.getFields(toType)) {
-            Collection<SystemConfig> configsForField = CollUtil.filter(configs, new Filter<SystemConfig>() {
+            Collection<? extends SystemConfig> configsForField = CollUtil.filter(configs, new Filter() {
                 @Override
-                public boolean accept(SystemConfig systemConfig) {
+                public boolean accept(Object o) {
+                    SystemConfig systemConfig = (SystemConfig) o;
                     return StrUtil.equalsIgnoreCase(field.getName(), systemConfig.getName());
                 }
             });
@@ -74,7 +77,7 @@ public abstract class AbstractConfigLoader implements ConfigLoader {
         return toConfigObject;
     }
 
-    private SystemConfig mustUnique(Collection<SystemConfig> configs) {
+    private SystemConfig mustUnique(Collection<? extends SystemConfig> configs) {
         SystemConfig config = CollUtil.getFirst(configs);
 
         Assert.isTrue(configs.size() == 1,

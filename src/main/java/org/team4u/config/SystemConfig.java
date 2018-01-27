@@ -1,122 +1,27 @@
 package org.team4u.config;
 
-import org.team4u.sql.builder.entity.annotation.Column;
-import org.team4u.sql.builder.entity.annotation.Id;
-import org.team4u.sql.builder.entity.annotation.Table;
-
-import java.util.Date;
-
 /**
  * @author Jay.Wu
  */
-@Table
-public class SystemConfig {
+public interface SystemConfig<S> {
 
-    @Id(auto = true)
-    private String id;
+    String getName();
 
-    @Column
-    private String name;
+    S setName(String name);
 
-    @Column
-    private String type;
+    String getValue();
 
-    @Column
-    private String value;
+    S setValue(String value);
 
-    @Column
-    private String description;
+    String getType();
 
-    @Column
-    private int sequenceNo;
+    S setType(String type);
 
-    @Column(name = "is_enabled")
-    private Boolean enabled;
+    int getSequenceNo();
 
-    @Column
-    private Date createTime;
+    S setSequenceNo(int sequenceNo);
 
-    @Column
-    private Date updateTime;
+    Boolean getEnabled();
 
-    public String getId() {
-        return id;
-    }
-
-    public SystemConfig setId(String id) {
-        this.id = id;
-        return this;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public SystemConfig setName(String name) {
-        this.name = name;
-        return this;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public SystemConfig setValue(String value) {
-        this.value = value;
-        return this;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public SystemConfig setType(String type) {
-        this.type = type;
-        return this;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public SystemConfig setDescription(String description) {
-        this.description = description;
-        return this;
-    }
-
-    public int getSequenceNo() {
-        return sequenceNo;
-    }
-
-    public SystemConfig setSequenceNo(int sequenceNo) {
-        this.sequenceNo = sequenceNo;
-        return this;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
-    }
-
-    public SystemConfig setEnabled(Boolean enabled) {
-        this.enabled = enabled;
-        return this;
-    }
-
-    public Date getCreateTime() {
-        return createTime;
-    }
-
-    public SystemConfig setCreateTime(Date createTime) {
-        this.createTime = createTime;
-        return this;
-    }
-
-    public Date getUpdateTime() {
-        return updateTime;
-    }
-
-    public SystemConfig setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-        return this;
-    }
+    S setEnabled(Boolean enabled);
 }

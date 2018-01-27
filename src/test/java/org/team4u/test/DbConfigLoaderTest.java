@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.team4u.config.ConfigLoader;
 import org.team4u.config.DbConfigLoader;
-import org.team4u.config.SystemConfig;
+import org.team4u.config.DefaultSystemConfig;
 import org.team4u.dao.core.SimpleDao;
 
 import java.util.List;
@@ -16,8 +16,8 @@ public class DbConfigLoaderTest extends ConfigLoaderTest {
 
     @Test
     public void load() {
-        ConfigLoader loader = newLoader();
-        List<SystemConfig> x = loader.load();
+        ConfigLoader<DefaultSystemConfig> loader = newLoader();
+        List<DefaultSystemConfig> x = loader.load();
         Assert.assertEquals(6, x.size());
     }
 
@@ -26,9 +26,9 @@ public class DbConfigLoaderTest extends ConfigLoaderTest {
         checkTo(newLoader());
     }
 
-    private DbConfigLoader newLoader() {
+    private DbConfigLoader<DefaultSystemConfig> newLoader() {
         SimpleDao dao = TestUtil.createAndInitDao();
         dao.insert(createConfigs(), null, true);
-        return new DbConfigLoader(dao.getDataSource());
+        return new DbConfigLoader<DefaultSystemConfig>(DefaultSystemConfig.class, dao.getDataSource());
     }
 }

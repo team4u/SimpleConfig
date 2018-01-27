@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.team4u.config.AbstractConfigLoader;
 import org.team4u.config.ConfigLoader;
 import org.team4u.config.ConfigurationProperties;
-import org.team4u.config.SystemConfig;
+import org.team4u.config.DefaultSystemConfig;
 
 import java.util.List;
 
@@ -17,10 +17,10 @@ public class ConfigLoaderTest {
 
     @Test
     public void to() {
-        ConfigLoader loader = new AbstractConfigLoader() {
+        ConfigLoader<DefaultSystemConfig> loader = new AbstractConfigLoader<DefaultSystemConfig>() {
 
             @Override
-            public List<SystemConfig> load() {
+            public List<DefaultSystemConfig> load() {
                 return createConfigs();
             }
         };
@@ -28,23 +28,23 @@ public class ConfigLoaderTest {
         checkTo(loader);
     }
 
-    protected List<SystemConfig> createConfigs() {
+    protected List<DefaultSystemConfig> createConfigs() {
         return CollUtil.newArrayList(
-                new SystemConfig().setType("app").setName("a").setValue("1").setEnabled(true),
-                new SystemConfig().setType("app").setName("b").setValue("0").setEnabled(true),
-                new SystemConfig().setType("app").setName("c").setValue("1").setEnabled(true),
-                new SystemConfig().setType("app").setName("d").setValue("1").setEnabled(true),
-                new SystemConfig().setType("app").setName("d").setValue("2").setEnabled(true),
-                new SystemConfig().setType("app").setName("e").setValue("{'name':'fjay','age':1}").setEnabled(true)
+                new DefaultSystemConfig().setType("app").setName("a").setValue("1").setEnabled(true),
+                new DefaultSystemConfig().setType("app").setName("b").setValue("0").setEnabled(true),
+                new DefaultSystemConfig().setType("app").setName("c").setValue("1").setEnabled(true),
+                new DefaultSystemConfig().setType("app").setName("d").setValue("2").setEnabled(true).setSequenceNo(1),
+                new DefaultSystemConfig().setType("app").setName("d").setValue("1").setEnabled(true).setSequenceNo(2),
+                new DefaultSystemConfig().setType("app").setName("e").setValue("{'name':'fjay','age':1}").setEnabled(true)
         );
     }
 
-    protected void checkTo(ConfigLoader loader) {
+    protected void checkTo(ConfigLoader<DefaultSystemConfig> loader) {
         Config config = loader.to(Config.class);
         Assert.assertEquals(Integer.valueOf(1), config.a);
         Assert.assertEquals(Boolean.FALSE, config.b);
         Assert.assertEquals(Boolean.TRUE, config.c);
-        Assert.assertArrayEquals(CollUtil.newArrayList(1, 2).toArray(), config.d);
+        Assert.assertArrayEquals(CollUtil.newArrayList(2, 1).toArray(), config.d);
         Assert.assertEquals("fjay", config.e.name);
         Assert.assertEquals(Integer.valueOf(1), config.e.age);
     }
