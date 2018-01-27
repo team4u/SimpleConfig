@@ -48,4 +48,9 @@ public class DbConfigLoader<C extends SystemConfig> extends AbstractConfigLoader
         }
         return result;
     }
+
+    @Override
+    public void close() {
+        // Ignore
+    }
 }

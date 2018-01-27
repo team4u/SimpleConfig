@@ -35,7 +35,8 @@ public class ConfigLoaderTest {
                 new DefaultSystemConfig().setType("app").setName("c").setValue("1").setEnabled(true),
                 new DefaultSystemConfig().setType("app").setName("d").setValue("2").setEnabled(true).setSequenceNo(1),
                 new DefaultSystemConfig().setType("app").setName("d").setValue("1").setEnabled(true).setSequenceNo(2),
-                new DefaultSystemConfig().setType("app").setName("e").setValue("{'name':'fjay','age':1}").setEnabled(true)
+                new DefaultSystemConfig().setType("app").setName("e").setValue("{'name':'fjay','age':1}").setEnabled(true),
+                new DefaultSystemConfig().setType("app").setName("f").setValue("f").setEnabled(false)
         );
     }
 
@@ -47,6 +48,7 @@ public class ConfigLoaderTest {
         Assert.assertArrayEquals(CollUtil.newArrayList(2, 1).toArray(), config.d);
         Assert.assertEquals("fjay", config.e.name);
         Assert.assertEquals(Integer.valueOf(1), config.e.age);
+        Assert.assertNull(config.f);
     }
 
     @ConfigurationProperties("app")
@@ -61,6 +63,8 @@ public class ConfigLoaderTest {
         Integer[] d;
 
         E e;
+
+        String f;
 
         public static class E {
 

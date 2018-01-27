@@ -119,4 +119,32 @@ public class DefaultSystemConfig implements SystemConfig<DefaultSystemConfig> {
         this.updateTime = updateTime;
         return this;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DefaultSystemConfig that = (DefaultSystemConfig) o;
+
+        if (sequenceNo != that.sequenceNo) return false;
+        if (!id.equals(that.id)) return false;
+        if (!name.equals(that.name)) return false;
+        if (!type.equals(that.type)) return false;
+        if (!value.equals(that.value)) return false;
+        if (description != null ? !description.equals(that.description) : that.description != null) return false;
+        return enabled.equals(that.enabled);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id.hashCode();
+        result = 31 * result + name.hashCode();
+        result = 31 * result + type.hashCode();
+        result = 31 * result + value.hashCode();
+        result = 31 * result + (description != null ? description.hashCode() : 0);
+        result = 31 * result + sequenceNo;
+        result = 31 * result + enabled.hashCode();
+        return result;
+    }
 }
