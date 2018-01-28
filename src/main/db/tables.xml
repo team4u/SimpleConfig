@@ -9,8 +9,8 @@
         <column name="value" required="true" default="" size="4000" description="值"/>
         <column name="sequence_no" type="BIGINT" required="true" size="20" description="顺序号" default="0"/>
         <column name="description" required="true" size="255" description="描述" default=""/>
-        <column name="create_time" required="true" type="TIMESTAMP" default="2018-01-01 00:00:00" description="创建时间"/>
-        <column name="update_time" required="true" type="TIMESTAMP" description="更新时间" default="2018-01-01 00:00:00"/>
+        <column name="create_time" required="true" type="TIMESTAMP" default="CURRENT_TIMESTAMP" description="创建时间"/>
+        <column name="update_time" required="true" type="TIMESTAMP" description="更新时间" default="CURRENT_TIMESTAMP"/>
         <index name="idx_type_name">
             <index-column name="name"/>
             <index-column name="type"/>

@@ -20,6 +20,11 @@ public class ConfigLoaderTest {
         ConfigLoader<DefaultSystemConfig> loader = new AbstractConfigLoader<DefaultSystemConfig>() {
 
             @Override
+            public void close() {
+
+            }
+
+            @Override
             public List<DefaultSystemConfig> load() {
                 return createConfigs();
             }
@@ -40,15 +45,17 @@ public class ConfigLoaderTest {
         );
     }
 
-    protected void checkTo(ConfigLoader<DefaultSystemConfig> loader) {
+    protected Config checkTo(ConfigLoader<DefaultSystemConfig> loader) {
         Config config = loader.to(Config.class);
-        Assert.assertEquals(Integer.valueOf(1), config.a);
-        Assert.assertEquals(Boolean.FALSE, config.b);
-        Assert.assertEquals(Boolean.TRUE, config.c);
-        Assert.assertArrayEquals(CollUtil.newArrayList(2, 1).toArray(), config.d);
-        Assert.assertEquals("fjay", config.e.name);
-        Assert.assertEquals(Integer.valueOf(1), config.e.age);
-        Assert.assertNull(config.f);
+        Assert.assertEquals(Integer.valueOf(1), config.getA());
+        Assert.assertEquals(Boolean.FALSE, config.getB());
+        Assert.assertEquals(Boolean.TRUE, config.getC());
+        Assert.assertArrayEquals(CollUtil.newArrayList(2, 1).toArray(), config.getD());
+        Assert.assertEquals("fjay", config.getE().getName());
+        Assert.assertEquals(Integer.valueOf(1), config.getE().getAge());
+        Assert.assertNull(config.getF());
+
+        return config;
     }
 
     @ConfigurationProperties("app")
@@ -65,6 +72,60 @@ public class ConfigLoaderTest {
         E e;
 
         String f;
+
+        public Integer getA() {
+            return a;
+        }
+
+        public Config setA(Integer a) {
+            this.a = a;
+            return this;
+        }
+
+        public Boolean getB() {
+            return b;
+        }
+
+        public Config setB(Boolean b) {
+            this.b = b;
+            return this;
+        }
+
+        public Boolean getC() {
+            return c;
+        }
+
+        public Config setC(Boolean c) {
+            this.c = c;
+            return this;
+        }
+
+        public Integer[] getD() {
+            return d;
+        }
+
+        public Config setD(Integer[] d) {
+            this.d = d;
+            return this;
+        }
+
+        public E getE() {
+            return e;
+        }
+
+        public Config setE(E e) {
+            this.e = e;
+            return this;
+        }
+
+        public String getF() {
+            return f;
+        }
+
+        public Config setF(String f) {
+            this.f = f;
+            return this;
+        }
 
         public static class E {
 

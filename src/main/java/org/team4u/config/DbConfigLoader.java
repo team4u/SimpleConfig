@@ -30,8 +30,7 @@ public class DbConfigLoader<C extends SystemConfig> extends AbstractConfigLoader
 
     @Override
     public List<C> load() {
-        List<C> result = dao.queryForList(
-                SqlBuilders.select(configType));
+        List<C> result = dao.queryForList(SqlBuilders.select(configType));
 
         CollUtil.sort(result, new Comparator<SystemConfig>() {
             @Override

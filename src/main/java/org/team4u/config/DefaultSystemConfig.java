@@ -10,10 +10,11 @@ import java.util.Date;
  * @author Jay.Wu
  */
 @Table(name = "system_config")
-public class DefaultSystemConfig implements SystemConfig<DefaultSystemConfig> {
+public class DefaultSystemConfig implements SystemConfig {
 
+    @Column
     @Id(auto = true)
-    private String id;
+    private Long id;
 
     @Column
     private String name;
@@ -39,11 +40,11 @@ public class DefaultSystemConfig implements SystemConfig<DefaultSystemConfig> {
     @Column
     private Date updateTime;
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public DefaultSystemConfig setId(String id) {
+    public DefaultSystemConfig setId(Long id) {
         this.id = id;
         return this;
     }
@@ -127,24 +128,14 @@ public class DefaultSystemConfig implements SystemConfig<DefaultSystemConfig> {
 
         DefaultSystemConfig that = (DefaultSystemConfig) o;
 
-        if (sequenceNo != that.sequenceNo) return false;
-        if (!id.equals(that.id)) return false;
         if (!name.equals(that.name)) return false;
-        if (!type.equals(that.type)) return false;
-        if (!value.equals(that.value)) return false;
-        if (description != null ? !description.equals(that.description) : that.description != null) return false;
-        return enabled.equals(that.enabled);
+        return type.equals(that.type);
     }
 
     @Override
     public int hashCode() {
-        int result = id.hashCode();
-        result = 31 * result + name.hashCode();
+        int result = name.hashCode();
         result = 31 * result + type.hashCode();
-        result = 31 * result + value.hashCode();
-        result = 31 * result + (description != null ? description.hashCode() : 0);
-        result = 31 * result + sequenceNo;
-        result = 31 * result + enabled.hashCode();
         return result;
     }
 }
