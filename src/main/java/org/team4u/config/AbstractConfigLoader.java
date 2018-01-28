@@ -10,11 +10,9 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.alibaba.fastjson.JSON;
-import org.team4u.kit.core.util.CollectionExUtil;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
-import java.util.List;
 
 
 /**
@@ -54,17 +52,12 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
                 continue;
             }
 
+            SystemConfig config = mustUnique(configsForField);
+
             if (ClassUtil.isSimpleValueType(field.getType())) {
-                SystemConfig config = mustUnique(configsForField);
                 ReflectUtil.setFieldValue(toConfigObject, field,
                         Convert.convert(field.getType(), config.getValue()));
-            } else if (field.getType().isArray()) {
-                List<String> values = CollectionExUtil.collectWithKey(configsForField, "value");
-
-                ReflectUtil.setFieldValue(toConfigObject, field,
-                        Convert.convert(field.getType(), values.toArray()));
             } else {
-                SystemConfig config = CollUtil.getFirst(configsForField);
                 Assert.isFalse(Collection.class.isAssignableFrom(field.getType()),
                         "配置属性不允许为Collection，请使用Array|name={}|type={}",
                         config.getName(), config.getType());

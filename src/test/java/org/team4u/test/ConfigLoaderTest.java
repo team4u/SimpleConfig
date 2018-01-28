@@ -38,8 +38,7 @@ public class ConfigLoaderTest {
                 new DefaultSystemConfig().setType("app").setName("a").setValue("1").setEnabled(true),
                 new DefaultSystemConfig().setType("app").setName("b").setValue("0").setEnabled(true),
                 new DefaultSystemConfig().setType("app").setName("c").setValue("1").setEnabled(true),
-                new DefaultSystemConfig().setType("app").setName("d").setValue("2").setEnabled(true).setSequenceNo(1),
-                new DefaultSystemConfig().setType("app").setName("d").setValue("1").setEnabled(true).setSequenceNo(2),
+                new DefaultSystemConfig().setType("app").setName("d").setValue("[2,1]").setEnabled(true),
                 new DefaultSystemConfig().setType("app").setName("e").setValue("{'name':'fjay','age':1}").setEnabled(true),
                 new DefaultSystemConfig().setType("app").setName("f").setValue("f").setEnabled(false)
         );
@@ -72,6 +71,8 @@ public class ConfigLoaderTest {
         E e;
 
         String f;
+
+        String g;
 
         public Integer getA() {
             return a;
@@ -124,6 +125,15 @@ public class ConfigLoaderTest {
 
         public Config setF(String f) {
             this.f = f;
+            return this;
+        }
+
+        public String getG() {
+            return g;
+        }
+
+        public Config setG(String g) {
+            this.g = g;
             return this;
         }
 

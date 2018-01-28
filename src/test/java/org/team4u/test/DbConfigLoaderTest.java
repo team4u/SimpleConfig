@@ -25,7 +25,7 @@ public class DbConfigLoaderTest extends ConfigLoaderTest {
     @Test
     public void cacheTo() {
         DbCacheConfigLoader<DefaultSystemConfig> loader = new DbCacheConfigLoader<DefaultSystemConfig>(
-                newLoader(), 1000, new Watcher<DefaultSystemConfig>() {
+                newLoader(), 500, new Watcher<DefaultSystemConfig>() {
 
             @Override
             public void onCreate(DefaultSystemConfig newConfig) {
@@ -50,15 +50,28 @@ public class DbConfigLoaderTest extends ConfigLoaderTest {
 
         Config c = checkTo(loader);
 
+        dao.insert(new DefaultSystemConfig()
+                .setType("app")
+                .setName("g")
+                .setValue("g")
+                .setEnabled(true), null, true);
+
         dao.execute(SqlBuilders.update(DefaultSystemConfig.class)
                 .setValue("value", "2")
                 .where("name", "=", "a")
                 .and("type", "=", "app")
                 .create());
 
-        ThreadUtil.safeSleep(1500);
+        dao.execute(SqlBuilders.delete(DefaultSystemConfig.class)
+                .where("name", "=", "b")
+                .and("type", "=", "app")
+                .create());
 
+        ThreadUtil.safeSleep(1000);
+
+        Assert.assertEquals("g", c.getG());
         Assert.assertEquals(Integer.valueOf(2), c.getA());
+        Assert.assertNull(c.getB());
     }
 
     private DbConfigLoader<DefaultSystemConfig> newLoader() {

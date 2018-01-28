@@ -1,6 +1,8 @@
 package org.team4u.config;
 
 /**
+ * 配置变动观察者
+ *
  * @author Jay.Wu
  */
 public interface Watcher<C extends SystemConfig> {
@@ -10,8 +12,7 @@ public interface Watcher<C extends SystemConfig> {
     void onCreate(C newConfig);
 
     /**
-     * 修改时执行的方法<br>
-     * 修改可能触发多次
+     * 修改时执行的方法
      */
     void onModify(C newConfig);
 

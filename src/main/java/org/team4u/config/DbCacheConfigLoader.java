@@ -12,6 +12,7 @@ import org.team4u.aop.SimpleAop;
 import org.team4u.kit.core.action.Function;
 import org.team4u.kit.core.error.ExceptionUtil;
 import org.team4u.kit.core.lang.LongTimeThread;
+import org.team4u.kit.core.log.LogMessage;
 import org.team4u.kit.core.util.CollectionExUtil;
 
 import java.lang.reflect.Method;
@@ -19,31 +20,51 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
+ * 数据库缓冲配置加载器
+ *
  * @author Jay.Wu
  */
 public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader<C> {
 
     private final Log log = LogFactory.get();
 
-    private List<C> configs;
-    private Object proxy;
-    private ConfigObjectInterceptor configObjectInterceptor = new ConfigObjectInterceptor();
-    private int cacheTimeoutMs;
+    /**
+     * 数据库配置集合缓存
+     */
+    private List<C> configCache;
+    /**
+     * 配置类代理
+     */
+    private Object configProxy;
 
-    private Watcher<C> watcher;
 
     private DbConfigLoader<C> dbConfigLoader;
+    private int refreshIntervalMs;
+    private Watcher<C> watcher;
 
-    private Worker worker = new Worker();
+    private ConfigObjectInterceptor configObjectInterceptor = new ConfigObjectInterceptor();
+    private RefreshWorker refreshWorker = new RefreshWorker();
 
-    public DbCacheConfigLoader(DbConfigLoader<C> dbConfigLoader,
-                               int cacheTimeoutMs, Watcher<C> watcher) {
+    /**
+     * @param dbConfigLoader    数据库配置加载器
+     * @param refreshIntervalMs 缓存刷新间隔时间（毫秒）
+     */
+    public DbCacheConfigLoader(DbConfigLoader<C> dbConfigLoader, int refreshIntervalMs) {
+        this(dbConfigLoader, refreshIntervalMs, null);
+    }
+
+    /**
+     * @param dbConfigLoader    数据库配置加载器
+     * @param refreshIntervalMs 缓存刷新间隔时间（毫秒）
+     * @param watcher           配置变动观察者
+     */
+    public DbCacheConfigLoader(DbConfigLoader<C> dbConfigLoader, int refreshIntervalMs, Watcher<C> watcher) {
         this.dbConfigLoader = dbConfigLoader;
         this.watcher = watcher;
-        this.cacheTimeoutMs = cacheTimeoutMs;
+        this.refreshIntervalMs = refreshIntervalMs;
 
-        if (cacheTimeoutMs > 0) {
-            worker.start();
+        if (refreshIntervalMs > 0) {
+            refreshWorker.start();
         }
     }
 
@@ -55,60 +76,75 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
     @Override
     @SuppressWarnings("unchecked")
     public <T> T to(Class<T> toType) {
-        if (proxy != null) {
-            log.trace("loadAllEnabledConfigs from cache(class={})", toType.getSimpleName());
-            return (T) proxy;
+        LogMessage lm = new LogMessage(this.getClass().getSimpleName(), "to")
+                .append("toType", toType.getSimpleName());
+        if (configProxy != null) {
+            log.debug(lm.success().append("proxy", "found").toString());
+            return (T) configProxy;
         }
 
         synchronized (this) {
-            if (proxy == null) {
+            if (configProxy == null) {
                 try {
-                    configObjectInterceptor.setConfigObject(dbConfigLoader.to(toType));
-                    proxy = SimpleAop.createClass(toType,
+                    configObjectInterceptor.setTarget(dbConfigLoader.to(toType));
+                    configProxy = SimpleAop.createClass(
+                            toType,
                             ElementMatchers.<MethodDescription>any(),
                             configObjectInterceptor).newInstance();
+                    log.info(lm.success().append("configProxy", "created").toString());
                 } catch (Exception e) {
+                    log.error(e, lm.fail().append("configProxy", "created").toString());
                     ExceptionUtil.throwRuntimeExceptionOrError(e);
                 }
             }
         }
 
         //noinspection unchecked
-        return (T) proxy;
+        return (T) configProxy;
     }
 
     @Override
     public void close() {
-        worker.close();
+        refreshWorker.close();
         dbConfigLoader.close();
     }
 
-    protected void refreshAndCompareConfigs() {
-        List<C> oldConfigs = configs;
-        configs = load();
-        if (compareConfigs(oldConfigs, configs)) {
-            configObjectInterceptor.setConfigObject(
-                    dbConfigLoader.to(configObjectInterceptor.configObject.getClass())
-            );
+    private void loadAndDiffConfigs() {
+        try {
+            List<C> oldConfigs = configCache;
+            configCache = load();
+            if (diffConfigs(oldConfigs, configCache)) {
+                configObjectInterceptor.setTarget(
+                        dbConfigLoader.to(configObjectInterceptor.target.getClass())
+                );
+            }
+        } catch (Throwable e) {
+            watcher.onError(e);
         }
     }
 
-    private boolean compareConfigs(List<C> oldConfigs, List<C> newConfigs) {
+    /**
+     * 比较配置是否变化
+     */
+    private boolean diffConfigs(List<C> oldConfigs, List<C> newConfigs) {
+        //noinspection SimplifiableIfStatement
         if (oldConfigs == null) {
             return true;
         }
 
-        return compareCreatedConfigs(oldConfigs, newConfigs) ||
-                compareDeletedConfigs(oldConfigs, newConfigs) ||
-                compareModifyConfigs(oldConfigs, newConfigs);
+        boolean hasCreatedConfigs = diffCreatedConfigs(oldConfigs, newConfigs);
+        boolean hasDeletedConfigs = diffDeletedConfigs(oldConfigs, newConfigs);
+        boolean hasModifyConfigs = diffModifyConfigs(oldConfigs, newConfigs);
 
+        return hasCreatedConfigs || hasDeletedConfigs || hasModifyConfigs;
     }
 
     /**
-     * 比较新增的配置项
+     * 比较配置是否新增
      */
-    private boolean compareCreatedConfigs(List<C> oldConfigs, List<C> newConfigs) {
+    private boolean diffCreatedConfigs(List<C> oldConfigs, List<C> newConfigs) {
         boolean hasCreatedConfig = false;
+
         for (final C newConfig : newConfigs) {
             if (!CollectionExUtil.any(oldConfigs, new Function<C, Boolean>() {
                 @Override
@@ -118,6 +154,11 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
                 }
             })) {
                 hasCreatedConfig = true;
+
+                log.info(new LogMessage(this.getClass().getSimpleName(), "diffCreatedConfigs")
+                        .success()
+                        .append("newConfig", newConfig)
+                        .toString());
 
                 if (watcher != null) {
                     watcher.onCreate(newConfig);
@@ -129,10 +170,11 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
     }
 
     /**
-     * 比较删除的配置项
+     * 比较配置是否删除
      */
-    private boolean compareDeletedConfigs(List<C> oldConfigs, List<C> newConfigs) {
+    private boolean diffDeletedConfigs(List<C> oldConfigs, List<C> newConfigs) {
         boolean hasDeletedConfig = false;
+
         for (final C oldConfig : oldConfigs) {
             if (!CollectionExUtil.any(newConfigs, new Function<C, Boolean>() {
                 @Override
@@ -142,6 +184,11 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
                 }
             })) {
                 hasDeletedConfig = true;
+
+                log.info(new LogMessage(this.getClass().getSimpleName(), "diffDeletedConfigs")
+                        .success()
+                        .append("oldConfig", oldConfig)
+                        .toString());
 
                 if (watcher != null) {
                     watcher.onDelete(oldConfig);
@@ -153,11 +200,10 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
     }
 
     /**
-     * 比较修改的配置项
+     * 比较配置是否修改
      */
-    private boolean compareModifyConfigs(List<C> oldConfigs, List<C> newConfigs) {
+    private boolean diffModifyConfigs(List<C> oldConfigs, List<C> newConfigs) {
         boolean hasModifiedConfig = false;
-
 
         for (C oldConfig : oldConfigs) {
             for (C newConfig : newConfigs) {
@@ -167,6 +213,12 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
                             oldConfig.getSequenceNo() != newConfig.getSequenceNo() ||
                             oldConfig.getEnabled() != newConfig.getEnabled()) {
                         hasModifiedConfig = true;
+
+                        log.info(new LogMessage(this.getClass().getSimpleName(), "diffModifyConfigs")
+                                .success()
+                                .append("oldConfig", oldConfig)
+                                .append("newConfig", newConfig)
+                                .toString());
 
                         if (watcher != null) {
                             watcher.onModify(newConfig);
@@ -179,29 +231,37 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
         return hasModifiedConfig;
     }
 
-    private class Worker extends LongTimeThread {
+    /**
+     * 缓存更新器
+     */
+    private class RefreshWorker extends LongTimeThread {
 
         @Override
         protected void onRun() {
-            ThreadUtil.safeSleep(cacheTimeoutMs);
-            refreshAndCompareConfigs();
+            ThreadUtil.safeSleep(refreshIntervalMs);
+            loadAndDiffConfigs();
         }
     }
 
 
+    /**
+     * 配置类拦截器
+     */
     protected class ConfigObjectInterceptor implements MethodInterceptor {
 
-        private Object configObject;
+        /**
+         * 实际配置类
+         */
+        private Object target;
 
-        public ConfigObjectInterceptor setConfigObject(Object configObject) {
-            this.configObject = configObject;
-            return this;
+        void setTarget(Object target) {
+            this.target = target;
         }
 
         @Override
         public Object intercept(Object instance, Object[] parameters,
                                 Method method, Callable<?> superMethod) {
-            return ReflectUtil.invoke(configObject, method.getName(), parameters);
+            return ReflectUtil.invoke(target, method.getName(), parameters);
         }
     }
 }
