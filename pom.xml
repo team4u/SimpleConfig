@@ -11,8 +11,8 @@
             <groupId>org.team4u.dao</groupId>
             <artifactId>simple-dao</artifactId>
             <version>1.0.4</version>
+            <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>org.team4u</groupId>
             <artifactId>team-kit-core</artifactId>
