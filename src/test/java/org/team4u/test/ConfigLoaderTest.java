@@ -33,7 +33,7 @@ public class ConfigLoaderTest {
         checkTo(loader);
     }
 
-    protected List<DefaultSystemConfig> createConfigs() {
+    protected static List<DefaultSystemConfig> createConfigs() {
         return CollUtil.newArrayList(
                 new DefaultSystemConfig().setType("app").setName("a").setValue("1").setEnabled(true),
                 new DefaultSystemConfig().setType("app").setName("b").setValue("0").setEnabled(true),

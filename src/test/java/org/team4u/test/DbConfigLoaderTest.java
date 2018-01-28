@@ -2,6 +2,7 @@ package org.team4u.test;
 
 import cn.hutool.core.thread.ThreadUtil;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.team4u.config.DbCacheConfigLoader;
 import org.team4u.config.DbConfigLoader;
@@ -15,7 +16,13 @@ import org.team4u.sql.builder.util.SqlBuilders;
  */
 public class DbConfigLoaderTest extends ConfigLoaderTest {
 
-    private SimpleDao dao = TestUtil.createAndInitDao();
+    private static SimpleDao dao;
+
+    @BeforeClass
+    public static void init() {
+        dao = TestUtil.createAndInitDao();
+        dao.insert(createConfigs(), null, true);
+    }
 
     @Test
     public void to() {
@@ -75,7 +82,6 @@ public class DbConfigLoaderTest extends ConfigLoaderTest {
     }
 
     private DbConfigLoader<DefaultSystemConfig> newLoader() {
-        dao.insert(createConfigs(), null, true);
         return new DbConfigLoader<DefaultSystemConfig>(DefaultSystemConfig.class, dao.getDataSource());
     }
 }
