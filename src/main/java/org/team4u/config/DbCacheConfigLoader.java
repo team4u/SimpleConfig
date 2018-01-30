@@ -1,23 +1,17 @@
 package org.team4u.config;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.thread.ThreadUtil;
-import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import net.bytebuddy.description.method.MethodDescription;
-import net.bytebuddy.matcher.ElementMatchers;
-import org.team4u.aop.MethodInterceptor;
-import org.team4u.aop.SimpleAop;
 import org.team4u.kit.core.action.Function;
 import org.team4u.kit.core.error.ExceptionUtil;
 import org.team4u.kit.core.lang.LongTimeThread;
 import org.team4u.kit.core.log.LogMessage;
 import org.team4u.kit.core.util.CollectionExUtil;
 
-import java.lang.reflect.Method;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * 数据库缓冲配置加载器
@@ -42,7 +36,6 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
     private int refreshIntervalMs;
     private Watcher<C> watcher;
 
-    private ConfigObjectInterceptor configObjectInterceptor = new ConfigObjectInterceptor();
     private RefreshWorker refreshWorker = new RefreshWorker();
 
     /**
@@ -86,11 +79,7 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
         synchronized (this) {
             if (configProxy == null) {
                 try {
-                    configObjectInterceptor.setTarget(dbConfigLoader.to(toType));
-                    configProxy = SimpleAop.createClass(
-                            toType,
-                            ElementMatchers.<MethodDescription>any(),
-                            configObjectInterceptor).newInstance();
+                    configProxy = dbConfigLoader.to(toType);
                     log.info(lm.success().append("configProxy", "created").toString());
                 } catch (Exception e) {
                     log.error(e, lm.fail().append("configProxy", "created").toString());
@@ -114,9 +103,11 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
             List<C> oldConfigs = configCache;
             configCache = load();
             if (diffConfigs(oldConfigs, configCache)) {
-                configObjectInterceptor.setTarget(
-                        dbConfigLoader.to(configObjectInterceptor.target.getClass())
-                );
+                if (configProxy == null) {
+                    return;
+                }
+
+                BeanUtil.copyProperties(dbConfigLoader.to(configProxy.getClass()), configProxy);
             }
         } catch (Throwable e) {
             watcher.onError(e);
@@ -240,28 +231,6 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
         protected void onRun() {
             ThreadUtil.safeSleep(refreshIntervalMs);
             loadAndDiffConfigs();
-        }
-    }
-
-
-    /**
-     * 配置类拦截器
-     */
-    protected class ConfigObjectInterceptor implements MethodInterceptor {
-
-        /**
-         * 实际配置类
-         */
-        private Object target;
-
-        void setTarget(Object target) {
-            this.target = target;
-        }
-
-        @Override
-        public Object intercept(Object instance, Object[] parameters,
-                                Method method, Callable<?> superMethod) {
-            return ReflectUtil.invoke(target, method.getName(), parameters);
         }
     }
 }
