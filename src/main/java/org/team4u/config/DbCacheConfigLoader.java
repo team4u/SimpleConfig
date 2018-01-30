@@ -11,7 +11,9 @@ import org.team4u.kit.core.lang.LongTimeThread;
 import org.team4u.kit.core.log.LogMessage;
 import org.team4u.kit.core.util.CollectionExUtil;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 数据库缓冲配置加载器
@@ -27,10 +29,9 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
      */
     private List<C> configCache;
     /**
-     * 配置类代理
+     * 配置类代理映射
      */
-    private Object configProxy;
-
+    private Map<Class, Object> toTypeProxy = new HashMap<Class, Object>();
 
     private DbConfigLoader<C> dbConfigLoader;
     private int refreshIntervalMs;
@@ -71,25 +72,27 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
     public <T> T to(Class<T> toType) {
         LogMessage lm = new LogMessage(this.getClass().getSimpleName(), "to")
                 .append("toType", toType.getSimpleName());
-        if (configProxy != null) {
-            log.debug(lm.success().append("proxy", "found").toString());
-            return (T) configProxy;
+        if (toTypeProxy.containsKey(toType)) {
+            log.debug(lm.success().append("mode", "cache").toString());
+            return (T) toTypeProxy.get(toType);
         }
 
         synchronized (this) {
-            if (configProxy == null) {
+            if (!toTypeProxy.containsKey(toType)) {
                 try {
-                    configProxy = dbConfigLoader.to(toType);
-                    log.info(lm.success().append("configProxy", "created").toString());
+                    T proxy = dbConfigLoader.to(toType);
+                    toTypeProxy.put(toType, proxy);
+                    log.info(lm.success().append("mode", "new").toString());
+                    return proxy;
                 } catch (Exception e) {
-                    log.error(e, lm.fail().append("configProxy", "created").toString());
-                    ExceptionUtil.throwRuntimeExceptionOrError(e);
+                    log.error(e, lm.fail().append("mode", "new").toString());
+                    throw ExceptionUtil.toRuntimeException(e);
                 }
+            } else {
+                log.debug(lm.success().append("mode", "cache").toString());
+                return (T) toTypeProxy.get(toType);
             }
         }
-
-        //noinspection unchecked
-        return (T) configProxy;
     }
 
     @Override
@@ -103,11 +106,9 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
             List<C> oldConfigs = configCache;
             configCache = load();
             if (diffConfigs(oldConfigs, configCache)) {
-                if (configProxy == null) {
-                    return;
+                for (Map.Entry<Class, Object> entry : toTypeProxy.entrySet()) {
+                    BeanUtil.copyProperties(dbConfigLoader.to(entry.getKey()), entry.getValue());
                 }
-
-                BeanUtil.copyProperties(dbConfigLoader.to(configProxy.getClass()), configProxy);
             }
         } catch (Throwable e) {
             watcher.onError(e);
