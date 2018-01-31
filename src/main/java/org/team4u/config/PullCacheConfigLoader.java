@@ -11,21 +11,22 @@ import org.team4u.kit.core.lang.LongTimeThread;
 import org.team4u.kit.core.log.LogMessage;
 import org.team4u.kit.core.util.CollectionExUtil;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 数据库缓冲配置加载器
+ * 主动拉取缓冲配置加载器
  *
  * @author Jay.Wu
  */
-public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader<C> {
+public class PullCacheConfigLoader<C extends SystemConfig> implements ConfigLoader<C> {
 
     private final Log log = LogFactory.get();
 
     /**
-     * 数据库配置集合缓存
+     * 代理配置集合缓存
      */
     private List<C> configCache;
     /**
@@ -33,27 +34,27 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
      */
     private Map<Class, Object> toTypeProxy = new HashMap<Class, Object>();
 
-    private DbConfigLoader<C> dbConfigLoader;
+    private ConfigLoader<C> delegateConfigLoader;
     private int refreshIntervalMs;
     private Watcher<C> watcher;
 
     private RefreshWorker refreshWorker = new RefreshWorker();
 
     /**
-     * @param dbConfigLoader    数据库配置加载器
-     * @param refreshIntervalMs 缓存刷新间隔时间（毫秒）
+     * @param delegateConfigLoader 代理配置加载器
+     * @param refreshIntervalMs    缓存刷新间隔时间（毫秒）
      */
-    public DbCacheConfigLoader(DbConfigLoader<C> dbConfigLoader, int refreshIntervalMs) {
-        this(dbConfigLoader, refreshIntervalMs, null);
+    public PullCacheConfigLoader(ConfigLoader<C> delegateConfigLoader, int refreshIntervalMs) {
+        this(delegateConfigLoader, refreshIntervalMs, null);
     }
 
     /**
-     * @param dbConfigLoader    数据库配置加载器
-     * @param refreshIntervalMs 缓存刷新间隔时间（毫秒）
-     * @param watcher           配置变动观察者
+     * @param delegateConfigLoader 代理配置加载器
+     * @param refreshIntervalMs    缓存刷新间隔时间（毫秒）
+     * @param watcher              配置变动观察者
      */
-    public DbCacheConfigLoader(DbConfigLoader<C> dbConfigLoader, int refreshIntervalMs, Watcher<C> watcher) {
-        this.dbConfigLoader = dbConfigLoader;
+    public PullCacheConfigLoader(ConfigLoader<C> delegateConfigLoader, int refreshIntervalMs, Watcher<C> watcher) {
+        this.delegateConfigLoader = delegateConfigLoader;
         this.watcher = watcher;
         this.refreshIntervalMs = refreshIntervalMs;
 
@@ -64,7 +65,7 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
 
     @Override
     public List<C> load() {
-        return dbConfigLoader.load();
+        return delegateConfigLoader.load();
     }
 
     @Override
@@ -80,7 +81,7 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
         synchronized (this) {
             if (!toTypeProxy.containsKey(toType)) {
                 try {
-                    T proxy = dbConfigLoader.to(toType);
+                    T proxy = delegateConfigLoader.to(toType);
                     toTypeProxy.put(toType, proxy);
                     log.info(lm.success().append("mode", "new").toString());
                     return proxy;
@@ -96,9 +97,9 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         refreshWorker.close();
-        dbConfigLoader.close();
+        delegateConfigLoader.close();
     }
 
     private void loadAndDiffConfigs() {
@@ -107,7 +108,7 @@ public class DbCacheConfigLoader<C extends SystemConfig> implements ConfigLoader
             configCache = load();
             if (diffConfigs(oldConfigs, configCache)) {
                 for (Map.Entry<Class, Object> entry : toTypeProxy.entrySet()) {
-                    BeanUtil.copyProperties(dbConfigLoader.to(entry.getKey()), entry.getValue());
+                    BeanUtil.copyProperties(delegateConfigLoader.to(entry.getKey()), entry.getValue());
                 }
             }
         } catch (Throwable e) {

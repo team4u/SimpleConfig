@@ -4,10 +4,10 @@ import cn.hutool.core.thread.ThreadUtil;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.team4u.config.DbCacheConfigLoader;
-import org.team4u.config.DbConfigLoader;
 import org.team4u.config.DefaultSystemConfig;
+import org.team4u.config.PullCacheConfigLoader;
 import org.team4u.config.Watcher;
+import org.team4u.config.db.DbConfigLoader;
 import org.team4u.dao.core.SimpleDao;
 import org.team4u.sql.builder.util.SqlBuilders;
 
@@ -31,7 +31,7 @@ public class DbConfigLoaderTest extends ConfigLoaderTest {
 
     @Test
     public void cacheTo() {
-        DbCacheConfigLoader<DefaultSystemConfig> loader = new DbCacheConfigLoader<DefaultSystemConfig>(
+        PullCacheConfigLoader<DefaultSystemConfig> loader = new PullCacheConfigLoader<DefaultSystemConfig>(
                 newLoader(), 500, new Watcher<DefaultSystemConfig>() {
 
             @Override
