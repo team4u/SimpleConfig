@@ -62,8 +62,11 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
                         Convert.convert(field.getType(), config.getValue()));
             } else if (Collection.class.isAssignableFrom(field.getType())) {
                 ReflectUtil.setFieldValue(toConfigObject, field,
-                        Convert.toCollection(field.getType(), getCollActualType(field),
-                                StrUtil.splitTrim(config.getValue(), ",")));
+                        Convert.toCollection(
+                                field.getType(),
+                                getCollActualType(field),
+                                StrUtil.splitTrim(config.getValue(), ","))
+                );
             } else {
                 mustUnique(configsForField);
                 Object value = JSON.parseObject(config.getValue(), field.getType());
