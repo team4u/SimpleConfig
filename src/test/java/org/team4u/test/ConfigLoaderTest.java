@@ -38,9 +38,11 @@ public class ConfigLoaderTest {
                 new DefaultSystemConfig().setType("app").setName("a").setValue("1").setEnabled(true),
                 new DefaultSystemConfig().setType("app").setName("b").setValue("0").setEnabled(true),
                 new DefaultSystemConfig().setType("app").setName("c").setValue("1").setEnabled(true),
-                new DefaultSystemConfig().setType("app").setName("d").setValue("[2,1]").setEnabled(true),
+                new DefaultSystemConfig().setType("app").setName("d").setValue("2,1").setEnabled(true),
                 new DefaultSystemConfig().setType("app").setName("e").setValue("{'name':'fjay','age':1}").setEnabled(true),
-                new DefaultSystemConfig().setType("app").setName("f").setValue("f").setEnabled(false)
+                new DefaultSystemConfig().setType("app").setName("f").setValue("f").setEnabled(false),
+                new DefaultSystemConfig().setType("app").setName("h").setValue("2, 1").setEnabled(true)
+
         );
     }
 
@@ -53,6 +55,7 @@ public class ConfigLoaderTest {
         Assert.assertEquals("fjay", config.getE().getName());
         Assert.assertEquals(Integer.valueOf(1), config.getE().getAge());
         Assert.assertNull(config.getF());
+        Assert.assertEquals(CollUtil.newArrayList(2, 1), config.getH());
 
         return config;
     }
@@ -73,6 +76,8 @@ public class ConfigLoaderTest {
         String f;
 
         String g;
+
+        List<Integer> h;
 
         public Integer getA() {
             return a;
@@ -134,6 +139,15 @@ public class ConfigLoaderTest {
 
         public Config setG(String g) {
             this.g = g;
+            return this;
+        }
+
+        public List<Integer> getH() {
+            return h;
+        }
+
+        public Config setH(List<Integer> h) {
+            this.h = h;
             return this;
         }
 

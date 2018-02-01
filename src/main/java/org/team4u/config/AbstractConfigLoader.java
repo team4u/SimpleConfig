@@ -10,8 +10,11 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.alibaba.fastjson.JSON;
+import org.team4u.kit.core.util.CollectionExUtil;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Collection;
 
 
@@ -54,13 +57,14 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
 
             SystemConfig config = mustUnique(configsForField);
 
-            if (ClassUtil.isSimpleValueType(field.getType())) {
+            if (ClassUtil.isSimpleTypeOrArray(field.getType())) {
                 ReflectUtil.setFieldValue(toConfigObject, field,
                         Convert.convert(field.getType(), config.getValue()));
+            } else if (Collection.class.isAssignableFrom(field.getType())) {
+                ReflectUtil.setFieldValue(toConfigObject, field,
+                        Convert.toCollection(field.getType(), getCollActualType(field),
+                                StrUtil.splitTrim(config.getValue(), ",")));
             } else {
-                Assert.isFalse(Collection.class.isAssignableFrom(field.getType()),
-                        "配置属性不允许为Collection，请使用Array|name={}|type={}",
-                        config.getName(), config.getType());
                 mustUnique(configsForField);
                 Object value = JSON.parseObject(config.getValue(), field.getType());
                 ReflectUtil.setFieldValue(toConfigObject, field, value);
@@ -68,6 +72,21 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
         }
 
         return toConfigObject;
+    }
+
+    /**
+     * 获取集合属性声明的第一级泛型
+     */
+    private Class getCollActualType(Field field) {
+        Type genericFieldType = field.getGenericType();
+
+        if (genericFieldType instanceof ParameterizedType) {
+            ParameterizedType aType = (ParameterizedType) genericFieldType;
+            Type[] fieldArgTypes = aType.getActualTypeArguments();
+            return CollectionExUtil.getFirst(fieldArgTypes);
+        }
+
+        return null;
     }
 
     private SystemConfig mustUnique(Collection<? extends SystemConfig> configs) {
