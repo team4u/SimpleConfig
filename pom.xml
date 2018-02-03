@@ -37,11 +37,6 @@
             <version>1.2.45</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.team4u.aop</groupId>
-            <artifactId>simple-aop</artifactId>
-            <version>1.0.0</version>
-        </dependency>
 
         <dependency>
             <groupId>cn.hutool</groupId>
