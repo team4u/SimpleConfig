@@ -32,7 +32,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> implements ConfigLoad
     /**
      * 配置类代理映射
      */
-    private Map<Class, Object> toTypeProxy = new HashMap<Class, Object>();
+    private Map<Class, Object> toTypeProxies = new HashMap<Class, Object>();
 
     private ConfigLoader<C> delegateConfigLoader;
     private int refreshIntervalMs;
@@ -50,7 +50,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> implements ConfigLoad
 
     /**
      * @param delegateConfigLoader 代理配置加载器
-     * @param refreshIntervalMs    缓存刷新间隔时间（毫秒）
+     * @param refreshIntervalMs    缓存刷新间隔时间（毫秒），0则不开启刷新
      * @param watcher              配置变动观察者
      */
     public PullCacheConfigLoader(ConfigLoader<C> delegateConfigLoader, int refreshIntervalMs, Watcher<C> watcher) {
@@ -73,16 +73,18 @@ public class PullCacheConfigLoader<C extends SystemConfig> implements ConfigLoad
     public <T> T to(Class<T> toType) {
         LogMessage lm = new LogMessage(this.getClass().getSimpleName(), "to")
                 .append("toType", toType.getSimpleName());
-        if (toTypeProxy.containsKey(toType)) {
+        // 从缓存读取配置对象
+        if (toTypeProxies.containsKey(toType)) {
             log.debug(lm.success().append("mode", "cache").toString());
-            return (T) toTypeProxy.get(toType);
+            return (T) toTypeProxies.get(toType);
         }
 
         synchronized (this) {
-            if (!toTypeProxy.containsKey(toType)) {
+            if (!toTypeProxies.containsKey(toType)) {
                 try {
+                    // 创建配置对象并缓存
                     T proxy = delegateConfigLoader.to(toType);
-                    toTypeProxy.put(toType, proxy);
+                    toTypeProxies.put(toType, proxy);
                     log.info(lm.success().append("mode", "new").toString());
                     return proxy;
                 } catch (Exception e) {
@@ -91,7 +93,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> implements ConfigLoad
                 }
             } else {
                 log.debug(lm.success().append("mode", "cache").toString());
-                return (T) toTypeProxy.get(toType);
+                return (T) toTypeProxies.get(toType);
             }
         }
     }
@@ -102,12 +104,16 @@ public class PullCacheConfigLoader<C extends SystemConfig> implements ConfigLoad
         delegateConfigLoader.close();
     }
 
+    /**
+     * 加载并比较更新配置
+     */
     private void loadAndDiffConfigs() {
         try {
             List<C> oldConfigs = configCache;
             configCache = load();
+            // 若最新配置存在变化，则更新缓存的配置对象字段值
             if (diffConfigs(oldConfigs, configCache)) {
-                for (Map.Entry<Class, Object> entry : toTypeProxy.entrySet()) {
+                for (Map.Entry<Class, Object> entry : toTypeProxies.entrySet()) {
                     BeanUtil.copyProperties(delegateConfigLoader.to(entry.getKey()), entry.getValue());
                 }
             }
@@ -120,6 +126,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> implements ConfigLoad
      * 比较配置是否变化
      */
     private boolean diffConfigs(List<C> oldConfigs, List<C> newConfigs) {
+        // 若无缓存配置则表示初次初始化，无需比较
         //noinspection SimplifiableIfStatement
         if (oldConfigs == null) {
             return true;

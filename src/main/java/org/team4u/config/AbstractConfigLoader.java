@@ -7,8 +7,6 @@ import cn.hutool.core.lang.Filter;
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.log.Log;
-import cn.hutool.log.LogFactory;
 import com.alibaba.fastjson.JSON;
 import org.team4u.kit.core.util.FieldUtil;
 
@@ -17,11 +15,11 @@ import java.util.Collection;
 
 
 /**
+ * 抽象配置类
+ *
  * @author Jay.Wu
  */
 public abstract class AbstractConfigLoader<C extends SystemConfig> implements ConfigLoader<C> {
-
-    private final Log log = LogFactory.get();
 
     @Override
     @SuppressWarnings("unchecked")
@@ -29,6 +27,7 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
         final ConfigurationProperties cp = toType.getAnnotation(ConfigurationProperties.class);
         Assert.notNull(cp, "请添加@ConfigurationProperties注解");
 
+        // 获取开启的且类型符合的配置集合
         Collection<? extends SystemConfig> configs = CollUtil.filter(load(), new Filter() {
             @Override
             public boolean accept(Object o) {
@@ -41,6 +40,7 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
         T toConfigObject = ReflectUtil.newInstance(toType);
 
         for (final Field field : ReflectUtil.getFields(toType)) {
+            // 获取满足该字段的所有配置集合
             Collection<? extends SystemConfig> configsForField = CollUtil.filter(configs, new Filter() {
                 @Override
                 public boolean accept(Object o) {
@@ -53,12 +53,15 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
                 continue;
             }
 
+            // 确保只有一个满足
             SystemConfig config = mustUnique(configsForField);
 
+            // 简单类型直接注入
             if (ClassUtil.isSimpleTypeOrArray(field.getType())) {
                 ReflectUtil.setFieldValue(toConfigObject, field,
                         Convert.convert(field.getType(), config.getValue()));
             } else if (Collection.class.isAssignableFrom(field.getType())) {
+                // 集合类型需要获取泛型类型，目前只支持一级泛型
                 ReflectUtil.setFieldValue(toConfigObject, field,
                         Convert.toCollection(
                                 field.getType(),
@@ -66,7 +69,7 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
                                 StrUtil.splitTrim(config.getValue(), ","))
                 );
             } else {
-                mustUnique(configsForField);
+                // 复杂类型只支持json格式
                 Object value = JSON.parseObject(config.getValue(), field.getType());
                 ReflectUtil.setFieldValue(toConfigObject, field, value);
             }
@@ -75,6 +78,9 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
         return toConfigObject;
     }
 
+    /**
+     * 确保唯一性
+     */
     private SystemConfig mustUnique(Collection<? extends SystemConfig> configs) {
         SystemConfig config = CollUtil.getFirst(configs);
 

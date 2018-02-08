@@ -7,7 +7,9 @@ import org.team4u.kit.core.action.Function;
 import org.team4u.kit.core.error.ExceptionUtil;
 import org.team4u.kit.core.util.CollectionExUtil;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -21,6 +23,9 @@ public class PropsConfigLoader extends AbstractConfigLoader<DefaultSystemConfig>
 
     private String path;
 
+    /**
+     * @param path 配置文件路径
+     */
     public PropsConfigLoader(String path) {
         this.path = path;
     }
@@ -28,8 +33,11 @@ public class PropsConfigLoader extends AbstractConfigLoader<DefaultSystemConfig>
     @Override
     public List<DefaultSystemConfig> load() {
         try {
+            final File propsFile = FileUtil.file(path);
             Properties props = new Properties();
-            props.load(FileUtil.getInputStream(path));
+            props.load(FileUtil.getInputStream(propsFile));
+
+            final Date updateTime = new Date(propsFile.lastModified());
 
             return CollectionExUtil.collect(props.entrySet(),
                     new Function<Map.Entry<Object, Object>, DefaultSystemConfig>() {
@@ -41,7 +49,9 @@ public class PropsConfigLoader extends AbstractConfigLoader<DefaultSystemConfig>
                                     .setEnabled(true)
                                     .setType(typeAndName.substring(0, index))
                                     .setName(typeAndName.substring(index + 1, typeAndName.length()))
-                                    .setValue(obj.getValue().toString());
+                                    .setValue(obj.getValue().toString())
+                                    .setCreateTime(updateTime)
+                                    .setUpdateTime(updateTime);
                         }
                     });
         } catch (IOException e) {
@@ -51,6 +61,6 @@ public class PropsConfigLoader extends AbstractConfigLoader<DefaultSystemConfig>
 
     @Override
     public void close() {
-
+        // Ignore
     }
 }

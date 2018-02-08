@@ -7,6 +7,8 @@ import org.team4u.sql.builder.entity.annotation.Table;
 import java.util.Date;
 
 /**
+ * 默认配置类
+ *
  * @author Jay.Wu
  */
 @Table(name = "system_config")

@@ -15,6 +15,8 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
+ * 数据库配置加载器
+ *
  * @author Jay.Wu
  */
 public class DbConfigLoader<C extends SystemConfig> extends AbstractConfigLoader<C> {
@@ -25,6 +27,10 @@ public class DbConfigLoader<C extends SystemConfig> extends AbstractConfigLoader
 
     private Class<C> configType;
 
+    /**
+     * @param configType 配置类型
+     * @param dataSource 数据源
+     */
     public DbConfigLoader(Class<C> configType, DataSource dataSource) {
         this.configType = configType;
         dao = new SimpleDao(dataSource);
@@ -34,6 +40,7 @@ public class DbConfigLoader<C extends SystemConfig> extends AbstractConfigLoader
     public List<C> load() {
         List<C> result = dao.queryForList(SqlBuilders.select(configType));
 
+        // 按照sequenceNo降序
         CollUtil.sort(result, new Comparator<SystemConfig>() {
             @Override
             public int compare(SystemConfig o1, SystemConfig o2) {
