@@ -17,6 +17,11 @@ SimpleConfig 是一个轻量级的配置加载器，适用于简单的配置场�
 
 ```xml
 <dependency>
+    <groupId>org.team4u.config</groupId>
+    <artifactId>simple-config</artifactId>
+    <version>1.0.0</version>
+</dependency>
+<dependency>
     <groupId>org.team4u.dao</groupId>
     <artifactId>simple-dao</artifactId>
     <version>1.0.4</version>
