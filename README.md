@@ -103,6 +103,7 @@ CREATE INDEX idx_type_name
 | 类型   | 名称   | 值                       | 是否开启 | 序号   | 描述   |
 | ---- | ---- | ----------------------- | ---- | ---- | ---- |
 | app  | a    | 1                       | 1    | 0    |      |
+| app  | b    | 1                       | 1    | 0    |      |
 | app  | d    | 1,2,3                   | 1    | 0    |      |
 | app  | e    | {'name':'fjay','age':1} | 1    | 0    |      |
 | app  | h    | 1,2,3                   | 1    | 0    |      |
@@ -149,6 +150,7 @@ Config config = loader.to(Config.class);
 
 ```properties
 app.a=1
+app.b=1
 app.d=2,1
 app.e={'name':'fjay','age':1}
 app.h=2, 1
