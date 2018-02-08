@@ -15,7 +15,7 @@ import java.util.Collection;
 
 
 /**
- * 抽象配置类
+ * 抽象配置加载器
  *
  * @author Jay.Wu
  */
