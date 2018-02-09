@@ -141,7 +141,7 @@ public class E {
 ```java
 DbConfigLoader<DefaultSystemConfig> dbConfigLoader = new DbConfigLoader<DefaultSystemConfig>(DefaultSystemConfig.class, dataSource);
 
-Config config = loader.to(Config.class);
+Config config = dbConfigLoader.to(Config.class);
 ```
 
 ### 配置文件加载器
@@ -161,10 +161,10 @@ app.h=2, 1
 ```java
 PropsConfigLoader propsConfigLoader = new PropsConfigLoader("config.properties")
 
-Config config = loader.to(Config.class);
+Config config = propsConfigLoader.to(Config.class);
 ```
 
-### 缓存新加载器
+### 缓存配置加载器
 
 使用PullCacheConfigLoader可以将PropsConfigLoader或者DbConfigLoader生成的配置对象进行缓存，多次调用仅初始化一次配置类。
 
