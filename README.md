@@ -175,7 +175,8 @@ Config config2 = loader.to(Config.class);
 // config1 == config2
 ```
 
-还支持热更新，只需要配置定时拉取间隔时间即可。
+PullCacheConfigLoader同时支持热更新，配置同步间隔时间即可。
+
 ```java
 // 60s拉取一次数据库配置
 PullCacheConfigLoader<DefaultSystemConfig> loader = new PullCacheConfigLoader<DefaultSystemConfig>(dbConfigLoader, 600000);
