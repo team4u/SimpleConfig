@@ -178,8 +178,8 @@ Config config2 = loader.to(Config.class);
 PullCacheConfigLoader同时支持热更新，配置同步间隔时间即可。
 
 ```java
-// 60s拉取一次数据库配置
-PullCacheConfigLoader<DefaultSystemConfig> loader = new PullCacheConfigLoader<DefaultSystemConfig>(dbConfigLoader, 600000);
+// 10s拉取一次数据库配置
+PullCacheConfigLoader<DefaultSystemConfig> loader = new PullCacheConfigLoader<DefaultSystemConfig>(dbConfigLoader, 10000);
 Config config = loader.to(Config.class);
 
 // a的值为1
@@ -187,7 +187,7 @@ config.getA()
   
 // 手工更改数据库a配置值为2
   
-// 60s后a的值变为2
+// 10s后a的值变为2
 config.getA()
 ```
 Watcher可以监听配置变化
