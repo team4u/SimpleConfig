@@ -1,6 +1,7 @@
 package org.team4u.test;
 
 import cn.hutool.core.collection.CollUtil;
+import com.alibaba.fastjson.JSON;
 import org.junit.Assert;
 import org.junit.Test;
 import org.team4u.config.AbstractConfigLoader;
@@ -47,7 +48,21 @@ public class ConfigLoaderTest {
     }
 
     protected Config checkTo(ConfigLoader<DefaultSystemConfig> loader) {
-        Config config = loader.to(Config.class);
+        Config c1 = checkTo(loader, false);
+        Config c2 = checkTo(loader, true);
+
+        Assert.assertEquals(JSON.toJSON(c1), JSON.toJSON(c2));
+        return c1;
+    }
+
+    protected Config checkTo(ConfigLoader<DefaultSystemConfig> loader, boolean withPrefix) {
+        Config config;
+
+        if (withPrefix) {
+            config = loader.to(Config.class, "app");
+        } else {
+            config = loader.to(Config.class);
+        }
         Assert.assertEquals(Integer.valueOf(1), config.getA());
         Assert.assertEquals(Boolean.FALSE, config.getB());
         Assert.assertEquals(Boolean.TRUE, config.getC());

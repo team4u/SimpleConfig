@@ -21,7 +21,7 @@ import java.util.Map;
  *
  * @author Jay.Wu
  */
-public class PullCacheConfigLoader<C extends SystemConfig> implements ConfigLoader<C> {
+public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfigLoader<C> {
 
     private final Log log = LogFactory.get();
 
@@ -70,7 +70,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> implements ConfigLoad
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T to(Class<T> toType) {
+    public <T> T to(Class<T> toType, String prefix) {
         LogMessage lm = new LogMessage(this.getClass().getSimpleName(), "to")
                 .append("toType", toType.getSimpleName());
         // 从缓存读取配置对象
@@ -83,7 +83,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> implements ConfigLoad
             if (!toTypeProxies.containsKey(toType)) {
                 try {
                     // 创建配置对象并缓存
-                    T proxy = delegateConfigLoader.to(toType);
+                    T proxy = delegateConfigLoader.to(toType, prefix);
                     toTypeProxies.put(toType, proxy);
                     log.info(lm.success().append("mode", "new").toString());
                     return proxy;

@@ -21,19 +21,26 @@ import java.util.Collection;
  */
 public abstract class AbstractConfigLoader<C extends SystemConfig> implements ConfigLoader<C> {
 
-    @Override
-    @SuppressWarnings("unchecked")
     public <T> T to(Class<T> toType) {
         final ConfigurationProperties cp = toType.getAnnotation(ConfigurationProperties.class);
-        Assert.notNull(cp, "请添加@ConfigurationProperties注解");
 
+        String prefix = null;
+        if (cp != null) {
+            prefix = cp.value();
+        }
+        return to(toType, prefix);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T to(Class<T> toType, final String prefix) {
         // 获取开启的且类型符合的配置集合
         Collection<? extends SystemConfig> configs = CollUtil.filter(load(), new Filter() {
             @Override
             public boolean accept(Object o) {
                 SystemConfig systemConfig = (SystemConfig) o;
                 return systemConfig.getEnabled() &&
-                        StrUtil.equalsIgnoreCase(systemConfig.getType(), cp.value());
+                        StrUtil.equalsIgnoreCase(systemConfig.getType(), prefix);
             }
         });
 
