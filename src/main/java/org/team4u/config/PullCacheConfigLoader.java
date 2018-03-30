@@ -32,7 +32,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
     /**
      * 配置类代理映射
      */
-    private Map<Class, Object> toTypeProxies = new HashMap<Class, Object>();
+    private Map<Class, ProxyCache> toTypeProxies = new HashMap<Class, ProxyCache>();
 
     private ConfigLoader<C> delegateConfigLoader;
     private int refreshIntervalMs;
@@ -65,7 +65,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
 
     @Override
     public List<C> load() {
-        return delegateConfigLoader.load();
+        return configCache;
     }
 
     @Override
@@ -76,15 +76,16 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
         // 从缓存读取配置对象
         if (toTypeProxies.containsKey(toType)) {
             log.debug(lm.success().append("mode", "cache").toString());
-            return (T) toTypeProxies.get(toType);
+            return (T) toTypeProxies.get(toType).getProxy();
         }
 
         synchronized (this) {
             if (!toTypeProxies.containsKey(toType)) {
                 try {
                     // 创建配置对象并缓存
-                    T proxy = delegateConfigLoader.to(toType, prefix);
-                    toTypeProxies.put(toType, proxy);
+                    configCache = delegateConfigLoader.load();
+                    T proxy = super.to(toType, prefix);
+                    toTypeProxies.put(toType, new ProxyCache(prefix, proxy));
                     log.info(lm.success().append("mode", "new").toString());
                     return proxy;
                 } catch (Exception e) {
@@ -93,7 +94,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
                 }
             } else {
                 log.debug(lm.success().append("mode", "cache").toString());
-                return (T) toTypeProxies.get(toType);
+                return (T) toTypeProxies.get(toType).getProxy();
             }
         }
     }
@@ -110,11 +111,14 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
     private void loadAndDiffConfigs() {
         try {
             List<C> oldConfigs = configCache;
-            configCache = load();
+            configCache = delegateConfigLoader.load();
             // 若最新配置存在变化，则更新缓存的配置对象字段值
             if (diffConfigs(oldConfigs, configCache)) {
-                for (Map.Entry<Class, Object> entry : toTypeProxies.entrySet()) {
-                    BeanUtil.copyProperties(delegateConfigLoader.to(entry.getKey()), entry.getValue());
+                for (Map.Entry<Class, ProxyCache> entry : toTypeProxies.entrySet()) {
+                    BeanUtil.copyProperties(
+                            delegateConfigLoader.to(entry.getKey(), entry.getValue().getPrefix()),
+                            entry.getValue().getProxy()
+                    );
                 }
             }
         } catch (Throwable e) {
@@ -240,6 +244,24 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
         protected void onRun() {
             ThreadUtil.safeSleep(refreshIntervalMs);
             loadAndDiffConfigs();
+        }
+    }
+
+    private class ProxyCache {
+        private String prefix;
+        private Object proxy;
+
+        public ProxyCache(String prefix, Object proxy) {
+            this.prefix = prefix;
+            this.proxy = proxy;
+        }
+
+        public String getPrefix() {
+            return prefix;
+        }
+
+        public Object getProxy() {
+            return proxy;
         }
     }
 }
