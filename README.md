@@ -19,7 +19,7 @@ SimpleConfig 是一个轻量级的配置加载器，适用于简单的配置场�
 <dependency>
     <groupId>org.team4u.config</groupId>
     <artifactId>simple-config</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
 </dependency>
 <dependency>
     <groupId>org.team4u.dao</groupId>
@@ -34,7 +34,7 @@ SimpleConfig 是一个轻量级的配置加载器，适用于简单的配置场�
 <dependency>
     <groupId>cn.hutool</groupId>
     <artifactId>hutool-core</artifactId>
-    <version>4.0.5</version>
+    <version>4.0.9</version>
 </dependency>
 <dependency>
     <groupId>cn.hutool</groupId>
