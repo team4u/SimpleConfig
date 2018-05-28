@@ -87,8 +87,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
                     // 创建配置对象并缓存
                     configCache = delegateConfigLoader.load();
                     T proxy = super.to(toType, prefix);
-                    ProxyCache proxyCache = new ProxyCache(prefix, toType, proxy);
-                    toTypeProxies.put(key, proxyCache);
+                    toTypeProxies.put(key, new ProxyCache(prefix, toType, proxy));
                     log.info(lm.success().append("mode", "new").toString());
                     return proxy;
                 } catch (Exception e) {
