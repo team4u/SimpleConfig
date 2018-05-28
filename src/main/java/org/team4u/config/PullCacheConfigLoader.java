@@ -73,7 +73,8 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
     public <T> T to(Class<T> toType, String prefix) {
         LogMessage lm = new LogMessage(this.getClass().getSimpleName(), "to")
                 .append("toType", toType.getName());
-        String key = ProxyCache.getId(toType, prefix);
+        String key = toType.getName() + "_" + prefix;
+
         // 从缓存读取配置对象
         if (toTypeProxies.containsKey(key)) {
             log.debug(lm.success().append("mode", "cache").toString());
@@ -87,7 +88,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
                     configCache = delegateConfigLoader.load();
                     T proxy = super.to(toType, prefix);
                     ProxyCache proxyCache = new ProxyCache(prefix, toType, proxy);
-                    toTypeProxies.put(proxyCache.getId(), proxyCache);
+                    toTypeProxies.put(key, proxyCache);
                     log.info(lm.success().append("mode", "new").toString());
                     return proxy;
                 } catch (Exception e) {
@@ -118,7 +119,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
             if (diffConfigs(oldConfigs, configCache)) {
                 for (ProxyCache proxyCache : toTypeProxies.values()) {
                     BeanUtil.copyProperties(
-                            delegateConfigLoader.to(proxyCache.targetClass, proxyCache.getPrefix()),
+                            delegateConfigLoader.to(proxyCache.getTargetClass(), proxyCache.getPrefix()),
                             proxyCache.getProxy()
                     );
                 }
@@ -260,16 +261,8 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
             this.proxy = proxy;
         }
 
-        public static String getId(Class clazz, String prefix) {
-            return clazz.getName() + "_" + prefix;
-        }
-
         public String getPrefix() {
             return prefix;
-        }
-
-        public String getId() {
-            return getId(targetClass, prefix);
         }
 
         public Object getProxy() {
