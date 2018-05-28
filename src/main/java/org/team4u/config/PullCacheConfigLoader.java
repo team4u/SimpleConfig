@@ -32,7 +32,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
     /**
      * 配置类代理映射
      */
-    private Map<Class, ProxyCache> toTypeProxies = new HashMap<Class, ProxyCache>();
+    private Map<String, ProxyCache> toTypeProxies = new HashMap<String, ProxyCache>();
 
     private ConfigLoader<C> delegateConfigLoader;
     private int refreshIntervalMs;
@@ -72,20 +72,22 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
     @SuppressWarnings("unchecked")
     public <T> T to(Class<T> toType, String prefix) {
         LogMessage lm = new LogMessage(this.getClass().getSimpleName(), "to")
-                .append("toType", toType.getSimpleName());
+                .append("toType", toType.getName());
+        String key = ProxyCache.getId(toType, prefix);
         // 从缓存读取配置对象
-        if (toTypeProxies.containsKey(toType)) {
+        if (toTypeProxies.containsKey(key)) {
             log.debug(lm.success().append("mode", "cache").toString());
-            return (T) toTypeProxies.get(toType).getProxy();
+            return (T) toTypeProxies.get(key).getProxy();
         }
 
         synchronized (this) {
-            if (!toTypeProxies.containsKey(toType)) {
+            if (!toTypeProxies.containsKey(key)) {
                 try {
                     // 创建配置对象并缓存
                     configCache = delegateConfigLoader.load();
                     T proxy = super.to(toType, prefix);
-                    toTypeProxies.put(toType, new ProxyCache(prefix, proxy));
+                    ProxyCache proxyCache = new ProxyCache(prefix, toType, proxy);
+                    toTypeProxies.put(proxyCache.getId(), proxyCache);
                     log.info(lm.success().append("mode", "new").toString());
                     return proxy;
                 } catch (Exception e) {
@@ -94,7 +96,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
                 }
             } else {
                 log.debug(lm.success().append("mode", "cache").toString());
-                return (T) toTypeProxies.get(toType).getProxy();
+                return (T) toTypeProxies.get(key).getProxy();
             }
         }
     }
@@ -114,10 +116,10 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
             configCache = delegateConfigLoader.load();
             // 若最新配置存在变化，则更新缓存的配置对象字段值
             if (diffConfigs(oldConfigs, configCache)) {
-                for (Map.Entry<Class, ProxyCache> entry : toTypeProxies.entrySet()) {
+                for (ProxyCache proxyCache : toTypeProxies.values()) {
                     BeanUtil.copyProperties(
-                            delegateConfigLoader.to(entry.getKey(), entry.getValue().getPrefix()),
-                            entry.getValue().getProxy()
+                            delegateConfigLoader.to(proxyCache.targetClass, proxyCache.getPrefix()),
+                            proxyCache.getProxy()
                     );
                 }
             }
@@ -247,21 +249,35 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
         }
     }
 
-    private class ProxyCache {
+    private static class ProxyCache {
         private String prefix;
+        private Class targetClass;
         private Object proxy;
 
-        public ProxyCache(String prefix, Object proxy) {
+        public ProxyCache(String prefix, Class targetClass, Object proxy) {
             this.prefix = prefix;
+            this.targetClass = targetClass;
             this.proxy = proxy;
+        }
+
+        public static String getId(Class clazz, String prefix) {
+            return clazz.getName() + "_" + prefix;
         }
 
         public String getPrefix() {
             return prefix;
         }
 
+        public String getId() {
+            return getId(targetClass, prefix);
+        }
+
         public Object getProxy() {
             return proxy;
+        }
+
+        public Class getTargetClass() {
+            return targetClass;
         }
     }
 }

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.team4u.config</groupId>
     <artifactId>simple-config</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -16,19 +16,19 @@
         <dependency>
             <groupId>org.team4u</groupId>
             <artifactId>team-kit-core</artifactId>
-            <version>1.0.5</version>
+            <version>1.0.8</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-core</artifactId>
-            <version>4.0.9</version>
+            <version>4.0.12</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-log</artifactId>
-            <version>4.0.9</version>
+            <version>4.0.12</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -41,7 +41,7 @@
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>4.0.9</version>
+            <version>4.0.12</version>
             <scope>test</scope>
         </dependency>
         <dependency>
