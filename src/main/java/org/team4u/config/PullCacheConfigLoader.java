@@ -45,7 +45,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
      * @param refreshIntervalMs    缓存刷新间隔时间（毫秒）
      */
     public PullCacheConfigLoader(ConfigLoader<C> delegateConfigLoader, int refreshIntervalMs) {
-        this(delegateConfigLoader, refreshIntervalMs, null);
+        this(delegateConfigLoader, refreshIntervalMs, new DefaultWatcher<C>());
     }
 
     /**
