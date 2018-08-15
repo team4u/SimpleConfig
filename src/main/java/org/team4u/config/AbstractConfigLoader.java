@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.lang.Assert;
 import cn.hutool.core.lang.Filter;
+import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
@@ -11,7 +12,9 @@ import com.alibaba.fastjson.JSON;
 import org.team4u.kit.core.util.FieldUtil;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 
 /**
@@ -21,19 +24,23 @@ import java.util.Collection;
  */
 public abstract class AbstractConfigLoader<C extends SystemConfig> implements ConfigLoader<C> {
 
+    @Override
     public <T> T to(Class<T> toType) {
-        final ConfigurationProperties cp = toType.getAnnotation(ConfigurationProperties.class);
+        return to(toType, parsePrefixAnnotation(toType), parseIgnoreFieldsAnnotation(toType));
+    }
 
-        String prefix = null;
-        if (cp != null) {
-            prefix = cp.value();
-        }
-        return to(toType, prefix);
+    public <T> T to(Class<T> toType, String[] ignoreFields) {
+        return to(toType, parsePrefixAnnotation(toType), ignoreFields);
+    }
+
+    @Override
+    public <T> T to(Class<T> toType, String prefix) {
+        return to(toType, prefix, parseIgnoreFieldsAnnotation(toType));
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T to(Class<T> toType, final String prefix) {
+    public <T> T to(Class<T> toType, final String prefix, String[] ignoreFields) {
         // 获取开启的且类型符合的配置集合
         Collection<? extends SystemConfig> configs = CollUtil.filter(load(), new Filter() {
             @Override
@@ -47,6 +54,11 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
         T toConfigObject = ReflectUtil.newInstance(toType);
 
         for (final Field field : ReflectUtil.getFields(toType)) {
+            // 跳过忽略字段
+            if (ArrayUtil.contains(ignoreFields, field.getName())) {
+                continue;
+            }
+
             // 获取满足该字段的所有配置集合
             Collection<? extends SystemConfig> configsForField = CollUtil.filter(configs, new Filter() {
                 @Override
@@ -95,5 +107,35 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
                 "配置名称不唯一|name={}|type={}", config.getName(), config.getType());
 
         return config;
+    }
+
+    /**
+     * 解析前缀注解值
+     */
+    private <T> String parsePrefixAnnotation(Class<T> toType) {
+        final ConfigurationProperties cp = toType.getAnnotation(ConfigurationProperties.class);
+
+        String prefix = null;
+        if (cp != null) {
+            prefix = cp.value();
+        }
+
+        return prefix;
+    }
+
+    /**
+     * 解析忽略配置注解字段集合
+     */
+    private <T> String[] parseIgnoreFieldsAnnotation(Class<T> toType) {
+        List<String> ignoreFields = new ArrayList<String>();
+        for (Field field : ReflectUtil.getFields(toType)) {
+            if (field.getAnnotation(IgnoreField.class) == null) {
+                continue;
+            }
+
+            ignoreFields.add(field.getName());
+        }
+
+        return ArrayUtil.toArray(ignoreFields, String.class);
     }
 }

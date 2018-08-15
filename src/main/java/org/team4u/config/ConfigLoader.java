@@ -15,6 +15,11 @@ public interface ConfigLoader<C extends SystemConfig> extends Closeable {
     List<C> load();
 
     /**
+     * 转换为配置对象，无前缀或者使用ConfigurationProperties注解
+     */
+    <T> T to(Class<T> toType);
+
+    /**
      * 转换为配置对象，指定前缀
      */
     <T> T to(Class<T> toType, String prefix);
@@ -22,5 +27,10 @@ public interface ConfigLoader<C extends SystemConfig> extends Closeable {
     /**
      * 转换为配置对象，无前缀或者使用ConfigurationProperties注解
      */
-    <T> T to(Class<T> toType);
+    <T> T to(Class<T> toType, String[] ignoreFields);
+
+    /**
+     * 转换为配置对象，指定前缀
+     */
+    <T> T to(Class<T> toType, String prefix, String[] ignoreFields);
 }

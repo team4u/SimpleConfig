@@ -70,7 +70,7 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T to(Class<T> toType, String prefix) {
+    public <T> T to(Class<T> toType, String prefix, String[] ignoreFields) {
         LogMessage lm = new LogMessage(this.getClass().getSimpleName(), "to")
                 .append("toType", toType.getName());
         String key = toType.getName() + "_" + prefix;
@@ -86,8 +86,8 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
                 try {
                     // 创建配置对象并缓存
                     configCache = delegateConfigLoader.load();
-                    T proxy = super.to(toType, prefix);
-                    toTypeProxies.put(key, new ProxyCache(prefix, toType, proxy));
+                    T proxy = super.to(toType, prefix, ignoreFields);
+                    toTypeProxies.put(key, new ProxyCache(prefix, toType, proxy, ignoreFields));
                     log.info(lm.success().append("mode", "new").toString());
                     return proxy;
                 } catch (Exception e) {
@@ -118,8 +118,13 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
             if (diffConfigs(oldConfigs, configCache)) {
                 for (ProxyCache proxyCache : toTypeProxies.values()) {
                     BeanUtil.copyProperties(
-                            delegateConfigLoader.to(proxyCache.getTargetClass(), proxyCache.getPrefix()),
-                            proxyCache.getProxy()
+                            delegateConfigLoader.to(
+                                    proxyCache.getTargetClass(),
+                                    proxyCache.getPrefix(),
+                                    proxyCache.getIgnoreFields()
+                            ),
+                            proxyCache.getProxy(),
+                            proxyCache.ignoreFields
                     );
                 }
             }
@@ -253,11 +258,13 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
         private String prefix;
         private Class targetClass;
         private Object proxy;
+        private String[] ignoreFields;
 
-        public ProxyCache(String prefix, Class targetClass, Object proxy) {
+        public ProxyCache(String prefix, Class targetClass, Object proxy, String[] ignoreFields) {
             this.prefix = prefix;
             this.targetClass = targetClass;
             this.proxy = proxy;
+            this.ignoreFields = ignoreFields;
         }
 
         public String getPrefix() {
@@ -270,6 +277,15 @@ public class PullCacheConfigLoader<C extends SystemConfig> extends AbstractConfi
 
         public Class getTargetClass() {
             return targetClass;
+        }
+
+        public String[] getIgnoreFields() {
+            return ignoreFields;
+        }
+
+        public ProxyCache setIgnoreFields(String[] ignoreFields) {
+            this.ignoreFields = ignoreFields;
+            return this;
         }
     }
 }

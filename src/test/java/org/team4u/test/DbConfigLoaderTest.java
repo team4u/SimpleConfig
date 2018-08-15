@@ -57,6 +57,8 @@ public class DbConfigLoaderTest extends ConfigLoaderTest {
 
         Config c = checkTo(loader);
 
+        c.setJ("j");
+
         dao.insert(new DefaultSystemConfig()
                 .setType("app")
                 .setName("g")
@@ -79,6 +81,7 @@ public class DbConfigLoaderTest extends ConfigLoaderTest {
         Assert.assertEquals("g", c.getG());
         Assert.assertEquals(Integer.valueOf(2), c.getA());
         Assert.assertNull(c.getB());
+        Assert.assertEquals("j", c.getJ());
     }
 
     private DbConfigLoader<DefaultSystemConfig> newLoader() {

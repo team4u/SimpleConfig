@@ -4,10 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import com.alibaba.fastjson.JSON;
 import org.junit.Assert;
 import org.junit.Test;
-import org.team4u.config.AbstractConfigLoader;
-import org.team4u.config.ConfigLoader;
-import org.team4u.config.ConfigurationProperties;
-import org.team4u.config.DefaultSystemConfig;
+import org.team4u.config.*;
 
 import java.util.List;
 
@@ -42,8 +39,8 @@ public class ConfigLoaderTest {
                 new DefaultSystemConfig().setType("app").setName("d").setValue("2,1").setEnabled(true),
                 new DefaultSystemConfig().setType("app").setName("e").setValue("{'name':'fjay','age':1}").setEnabled(true),
                 new DefaultSystemConfig().setType("app").setName("f").setValue("f").setEnabled(false),
-                new DefaultSystemConfig().setType("app").setName("h").setValue("2, 1").setEnabled(true)
-
+                new DefaultSystemConfig().setType("app").setName("h").setValue("2, 1").setEnabled(true),
+                new DefaultSystemConfig().setType("app").setName("j").setValue("j").setEnabled(true)
         );
     }
 
@@ -71,6 +68,8 @@ public class ConfigLoaderTest {
         Assert.assertEquals(Integer.valueOf(1), config.getE().getAge());
         Assert.assertNull(config.getF());
         Assert.assertEquals(CollUtil.newArrayList(2, 1), config.getH());
+        Assert.assertEquals("i", config.getI());
+        Assert.assertNull(config.getJ());
 
         return config;
     }
@@ -93,6 +92,11 @@ public class ConfigLoaderTest {
         String g;
 
         List<Integer> h;
+
+        String i = "i";
+
+        @IgnoreField
+        String j;
 
         public Integer getA() {
             return a;
@@ -166,6 +170,24 @@ public class ConfigLoaderTest {
             return this;
         }
 
+        public String getI() {
+            return i;
+        }
+
+        public Config setI(String i) {
+            this.i = i;
+            return this;
+        }
+
+        public String getJ() {
+            return j;
+        }
+
+        public Config setJ(String j) {
+            this.j = j;
+            return this;
+        }
+
         public static class E {
 
             String name;
@@ -189,6 +211,7 @@ public class ConfigLoaderTest {
                 this.age = age;
                 return this;
             }
+
         }
     }
 }
