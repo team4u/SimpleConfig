@@ -42,7 +42,7 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
     @SuppressWarnings("unchecked")
     public <T> T to(Class<T> toType, final String prefix, String[] ignoreFields) {
         // 获取开启的且类型符合的配置集合
-        Collection<? extends SystemConfig> configs = CollUtil.filter(load(), new Filter() {
+        Collection<? extends SystemConfig> configs = CollUtil.filterNew(load(), new Filter() {
             @Override
             public boolean accept(Object o) {
                 SystemConfig systemConfig = (SystemConfig) o;
@@ -60,7 +60,7 @@ public abstract class AbstractConfigLoader<C extends SystemConfig> implements Co
             }
 
             // 获取满足该字段的所有配置集合
-            Collection<? extends SystemConfig> configsForField = CollUtil.filter(configs, new Filter() {
+            Collection<? extends SystemConfig> configsForField = CollUtil.filterNew(configs, new Filter() {
                 @Override
                 public boolean accept(Object o) {
                     SystemConfig systemConfig = (SystemConfig) o;
